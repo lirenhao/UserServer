@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="DEBUG">
+    <Appenders>
+        <!-- 控制台输出 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n" />
+        </Console>
+        <!-- 按照每天生成日志文件 -->
+        <RollingFile name="RollingFile" filename="logs/user.server.log"
+                     filepattern="logs/msp.server.%d{yyyy-MM-dd}.%i.log">
+            <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="10MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="30" />
+        </RollingFile>
+        <!-- fluentd服务连接配置 -->
+        <Http name="Fluentd" url="http://localhost:9880/ssp.user">
+            <JsonLayout compact="true" eventEol="true"/>
+            <property name="Content-type">application/json</property>
+        </Http>
+        <Async name="AsyncHttp" blocking="false" bufferSize="262144">
+            <AppenderRef ref="Fluentd"/>
+        </Async>
+    </Appenders>
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="RollingFile" />
+            <!-- <AppenderRef ref="AsyncHttp" /> -->
+        </Root>
+    </Loggers>
+</Configuration>
