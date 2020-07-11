@@ -1,7 +1,7 @@
 package com.yada.ssp.user.handlers.apis
 
 import com.yada.ssp.user.model.User
-import com.yada.ssp.user.services.IUserService
+import com.yada.ssp.user.services.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
@@ -11,7 +11,7 @@ import org.springframework.web.reactive.function.server.body
 import reactor.core.publisher.Mono
 
 @Component
-class UserHandler @Autowired constructor(private val userService: IUserService) {
+class UserHandler @Autowired constructor(private val userService: UserService) {
     fun getUsersBy(req: ServerRequest): Mono<ServerResponse> =
             ok().body(userService.getByOrgId(req.queryParam("org_id").orElse("")))
 

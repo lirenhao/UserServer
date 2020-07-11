@@ -4,7 +4,7 @@ import com.yada.ssp.user.auth.Auth
 import com.yada.ssp.user.security.IEmailCodeService
 import com.yada.ssp.user.security.IPwdStrengthService
 import com.yada.ssp.user.security.IRecaptchaService
-import com.yada.ssp.user.services.IUserService
+import com.yada.ssp.user.services.UserService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono
 
 @Component
 class AuthHandler @Autowired constructor(
-        private val userService: IUserService,
+        private val userService: UserService,
         private val recaptchaService: IRecaptchaService,
         private val pwdStrengthService: IPwdStrengthService,
         private val emailCodeService: IEmailCodeService

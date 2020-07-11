@@ -1,7 +1,7 @@
 package com.yada.ssp.user.handlers.apis
 
 import com.yada.ssp.user.model.Org
-import com.yada.ssp.user.services.IOrgService
+import com.yada.ssp.user.services.OrgService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
@@ -11,7 +11,7 @@ import org.springframework.web.reactive.function.server.body
 import reactor.core.publisher.Mono
 
 @Component
-class OrgHandler @Autowired constructor(private val orgService: IOrgService) {
+class OrgHandler @Autowired constructor(private val orgService: OrgService) {
     fun getTree(req: ServerRequest): Mono<ServerResponse> =
             ok().body(orgService.getTree(req.queryParam("redirect").orElse("")))
 

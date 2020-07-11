@@ -1,16 +1,14 @@
-package com.yada.ssp.user.impl
+package com.yada.ssp.user.services
 
 import com.yada.ssp.user.model.Org
 import com.yada.ssp.user.repository.OrgRepository
-import com.yada.ssp.user.services.IOrgService
-import com.yada.ssp.user.services.IUserService
-import com.yada.ssp.user.services.OrgTree
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
+data class OrgTree(val org: Org, val children: Set<OrgTree>?)
 
 fun Org.isMyOffspring(org: Org) = org.id.startsWith(this.id)
 
@@ -32,22 +30,22 @@ private fun makeTree(orgs: List<Org>): List<OrgTree> {
 @Service
 open class OrgService @Autowired constructor(
         private val repo: OrgRepository,
-        private val userSvc: IUserService
-) : IOrgService {
-    override fun getTree(orgIdPrefix: String?): Flux<OrgTree> =
+        private val userSvc: UserService
+) {
+    fun getTree(orgIdPrefix: String?): Flux<OrgTree> =
             repo.findByIdStartingWithOrderByIdAsc(orgIdPrefix ?: "")//("^${orgIdPrefix ?: ""}.*")
                     .collectList()
                     .map(::makeTree)
                     .flatMapMany { Flux.fromIterable(it) }
 
     @Transactional
-    override fun createOrUpdate(org: Org): Mono<Org> = repo.save(org)
+    fun createOrUpdate(org: Org): Mono<Org> = repo.save(org)
 
     @Transactional
-    override fun delete(id: String): Mono<Void> = userSvc.deleteByOrgId(id).then(repo.deleteById(id))
+    fun delete(id: String): Mono<Void> = userSvc.deleteByOrgId(id).then(repo.deleteById(id))
 
-    override fun get(id: String): Mono<Org> = repo.findById(id)
+    fun get(id: String): Mono<Org> = repo.findById(id)
 
-    override fun exist(id: String): Mono<Boolean> = repo.existsById(id)
+    fun exist(id: String): Mono<Boolean> = repo.existsById(id)
 
 }
