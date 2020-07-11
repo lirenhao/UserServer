@@ -22,11 +22,17 @@ class AuthHandler @Autowired constructor(
         private val emailCodeService: IEmailCodeService
 ) {
 
+    /**
+     * 从请求中提取用户Auth信息
+     */
     private fun getAuth(req: ServerRequest): Mono<Auth> {
         val auth = req.attribute("auth").orElse(null) as Auth
         return Mono.just(auth)
     }
 
+    /**
+     * 获取用户信息
+     */
     fun get(req: ServerRequest): Mono<ServerResponse> = getAuth(req)
             .flatMap { auth ->
                 userService.get(auth.userId!!)
@@ -39,13 +45,10 @@ class AuthHandler @Autowired constructor(
                         .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "用户信息不存在")))
             }
 
-    fun policy(req: ServerRequest): Mono<ServerResponse> = getAuth(req)
-            .flatMap { auth ->
-                userService.updateStatus(auth.userId!!, "00")
-                ServerResponse.ok().build()
-            }
-
-    fun sendCode(req: ServerRequest): Mono<ServerResponse> = getAuth(req)
+    /**
+     * 发送邮箱验证码
+     */
+    fun fa(req: ServerRequest): Mono<ServerResponse> = getAuth(req)
             .flatMap { auth ->
                 userService.get(auth.userId!!)
                         .flatMap {
@@ -60,26 +63,62 @@ class AuthHandler @Autowired constructor(
                         }
             }
 
-    fun initPwd(req: ServerRequest): Mono<ServerResponse> = req.bodyToMono<ResetPwdData>()
+    /**
+     * 用户初次登陆 01->02
+     */
+    fun init(req: ServerRequest): Mono<ServerResponse> = req.bodyToMono<InitData>()
             .flatMap { data ->
                 val auth = req.attribute("auth").get() as Auth
                 emailCodeService.check(auth.userId!!, data.code!!)
                         .filter { it }
                         .flatMap {
                             if (data.newPwd != null) {
+                                if (!pwdStrengthService.checkStrength(data.newPwd))
+                                    Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "密码强度不足"))
+                                else
+                                    userService.initPwd(auth.userId, data.newPwd, "02").then(ServerResponse.ok().build())
+                            } else
+                                Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "密码不能为空"))
+                        }
+                        .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "验证码未通过")))
+            }
+
+    /**
+     * 用户同意协议 02->00
+     */
+    fun policy(req: ServerRequest): Mono<ServerResponse> = getAuth(req)
+            .flatMap {
+                userService.updateStatus(it.userId!!, "00").then(ServerResponse.ok().build())
+            }
+
+    /**
+     * 强制用户修改密码 03->00
+     */
+    fun resetPwd(req: ServerRequest): Mono<ServerResponse> = req.bodyToMono<ResetPwdData>()
+            .flatMap { data ->
+                recaptchaService.check(data.captcha!!)
+                        .flatMap {
+                            if (data.oldPwd != null && data.newPwd != null) {
                                 if (!pwdStrengthService.checkStrength(data.newPwd)) {
                                     Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "密码强度不足"))
                                 } else {
-                                    userService.initPwd(auth.userId, data.newPwd, "o2")
-                                    ServerResponse.ok().build()
+                                    val auth = req.attribute("auth").get() as Auth
+                                    userService.changePwd(auth.userId!!, data.oldPwd, data.newPwd).flatMap { flag ->
+                                        if (flag) {
+                                            userService.updateStatus(auth.userId, "00").then(ServerResponse.ok().build())
+                                        } else
+                                            Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "修改密码时出错"))
+                                    }
                                 }
-
                             } else
                                 Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "密码不能为空"))
                         }
                         .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "未通过人机验证")))
             }
 
+    /**
+     * 用户修改密码
+     */
     fun changePwd(req: ServerRequest): Mono<ServerResponse> = req.bodyToMono<ChangePwdData>()
             .flatMap { data ->
                 recaptchaService.check(data.captcha!!)

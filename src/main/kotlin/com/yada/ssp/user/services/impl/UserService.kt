@@ -48,7 +48,8 @@ open class UserService @Autowired constructor(
 
     @Transactional
     override fun initPwd(id: String, pwd: String, status: String): Mono<Void> = changePwd(id, pwd)
-            .and {
+            .then(Mono.just(true))
+            .flatMap {
                 updateStatus(id, status)
             }
 

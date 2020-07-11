@@ -16,9 +16,10 @@ class UserRouterConfig @Autowired constructor(
     fun authRouter() = router {
         "/user".nest {
             GET("", authHandler::get)
-            POST("/fa", authHandler::sendCode)
-            POST("/initPwd", authHandler::initPwd)
+            POST("/fa", authHandler::fa)
+            POST("/init", authHandler::init)
             POST("/policy", authHandler::policy)
+            POST("/resetPwd", authHandler::resetPwd)
             POST("/changePwd", authHandler::changePwd)
             filter(authFilter)
         }
