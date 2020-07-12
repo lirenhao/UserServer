@@ -6,4 +6,4 @@ data class ResetPwdData(val oldPwd: String?, val newPwd: String?, val captcha: S
 
 data class ChangePwdData(val oldPwd: String?, val newPwd: String?, val captcha: String?)
 
-data class UserInfoData(val userId: String?, val status: String?)
+data class UserInfoData(val userId: String, val status: String, val emailAddress: String)

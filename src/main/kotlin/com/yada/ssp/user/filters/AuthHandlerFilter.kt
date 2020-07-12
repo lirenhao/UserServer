@@ -1,6 +1,8 @@
-package com.yada.ssp.user.auth
+package com.yada.ssp.user.filters
 
-import org.springframework.beans.factory.annotation.Value
+import com.yada.ssp.user.config.AuthConfigProperties
+import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpStatus
 import org.springframework.http.server.PathContainer
 import org.springframework.stereotype.Component
@@ -10,30 +12,22 @@ import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.util.pattern.PathPatternParser
 import reactor.core.publisher.Mono
 
-typealias Next = (ServerRequest) -> Mono<ServerResponse>
-typealias Filter = (request: ServerRequest, next: Next) -> Mono<ServerResponse>
-
 data class Auth(val orgId: String?, val userId: String?)
 
 @Component
-class AuthFilter(
-        @Value("#{'\${auth.exclude.paths:/res_list,/error}'.split(',')}")
-        private val exPaths: List<String>,
-        @Value("\${auth.mock.open:false}")
-        private val mockOpen: Boolean,
-        @Value("\${auth.mock.orgId:}")
-        private val mockOrgId: String,
-        @Value("\${auth.mock.userId:}")
-        private val mockUserId: String
+@Configuration
+@EnableConfigurationProperties(AuthConfigProperties::class)
+class AuthHandlerFilter(
+        private val config: AuthConfigProperties
 ) : Filter {
 
     override fun invoke(request: ServerRequest, next: Next): Mono<ServerResponse> {
         val uri = request.path()
-        if (exPaths.stream().anyMatch { path: String? -> PathPatternParser().parse(path!!).matches(PathContainer.parsePath(uri)) }) {
+        if (config.exPaths.stream().anyMatch { path: String? -> PathPatternParser().parse(path!!).matches(PathContainer.parsePath(uri)) }) {
             return next(request)
         } else {
-            return if (mockOpen) {
-                val auth = Auth(mockOrgId, mockUserId)
+            return if (config.mockOpen) {
+                val auth = Auth(config.mockOrgId, config.mockUserId)
                 request.attributes()["auth"] = auth
                 next(request)
             } else {

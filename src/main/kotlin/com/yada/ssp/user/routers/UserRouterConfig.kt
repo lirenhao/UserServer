@@ -1,6 +1,7 @@
 package com.yada.ssp.user.routers
 
-import com.yada.ssp.user.auth.AuthFilter
+import com.yada.ssp.user.filters.AuthHandlerFilter
+import com.yada.ssp.user.filters.WhitelistHandlerFilter
 import com.yada.ssp.user.handlers.AuthHandler
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
@@ -10,7 +11,8 @@ import org.springframework.web.reactive.function.server.router
 @Configuration
 class UserRouterConfig @Autowired constructor(
         private val authHandler: AuthHandler,
-        private val authFilter: AuthFilter
+        private val authHandlerFilter: AuthHandlerFilter,
+        private val whitelistHandlerFilter: WhitelistHandlerFilter
 ) {
     @Bean
     fun authRouter() = router {
@@ -21,7 +23,8 @@ class UserRouterConfig @Autowired constructor(
             POST("/policy", authHandler::policy)
             POST("/resetPwd", authHandler::resetPwd)
             POST("/changePwd", authHandler::changePwd)
-            filter(authFilter)
+            filter(authHandlerFilter)
         }
+        filter(whitelistHandlerFilter)
     }
 }

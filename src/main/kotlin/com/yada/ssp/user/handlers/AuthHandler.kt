@@ -1,6 +1,6 @@
 package com.yada.ssp.user.handlers
 
-import com.yada.ssp.user.auth.Auth
+import com.yada.ssp.user.filters.Auth
 import com.yada.ssp.user.security.IEmailCodeService
 import com.yada.ssp.user.security.IPwdStrengthService
 import com.yada.ssp.user.security.IRecaptchaService
@@ -37,7 +37,7 @@ class AuthHandler @Autowired constructor(
             .flatMap { auth ->
                 userService.get(auth.userId!!)
                         .map {
-                            UserInfoData(it.id, it.status)
+                            UserInfoData(it.id, it.status!!, it.emailAddress!!)
                         }
                         .flatMap {
                             ServerResponse.ok().bodyValue(it)
