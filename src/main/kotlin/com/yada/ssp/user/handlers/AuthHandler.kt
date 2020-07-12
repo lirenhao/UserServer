@@ -54,14 +54,11 @@ class AuthHandler @Autowired constructor(
             .flatMap { auth ->
                 userService.get(auth.userId!!)
                         .flatMap {
-                            if (it.emailAddress != null)
-                                emailCodeService.send(auth.userId, it.emailAddress)
-                                        .flatMap { flag ->
-                                            ServerResponse.ok().bodyValue(flag)
-                                        }
-                                        .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "验证码发送失败")))
-                            else
-                                Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "验证码发送失败"))
+                            emailCodeService.send(auth.userId, it.emailAddress)
+                                    .flatMap { flag ->
+                                        ServerResponse.ok().bodyValue(flag)
+                                    }
+                                    .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "验证码发送失败")))
                         }
             }
 
@@ -77,7 +74,7 @@ class AuthHandler @Autowired constructor(
                             if (data.newPwd != null) {
                                 if (pwdStrengthService.checkStrength(data.newPwd))
                                     userService.get(auth.userId).flatMap {
-                                        val status = it.status ?: "01"
+                                        val status = it.status
                                         val nextStatus = userConfig.statusNext[status] ?: status
                                         userService.initPwd(auth.userId, data.newPwd, nextStatus).then(ServerResponse.ok().build())
                                     }
@@ -95,7 +92,7 @@ class AuthHandler @Autowired constructor(
     fun policy(req: ServerRequest): Mono<ServerResponse> = getAuth(req)
             .flatMap { auth ->
                 userService.get(auth.userId!!).flatMap {
-                    val status = it.status ?: "02"
+                    val status = it.status
                     val nextStatus = userConfig.statusNext[status] ?: status
                     userService.updateStatus(auth.userId, nextStatus).then(ServerResponse.ok().build())
                 }
@@ -113,7 +110,7 @@ class AuthHandler @Autowired constructor(
                                 if (pwdStrengthService.checkStrength(data.newPwd)) {
                                     userService.checkPwd(auth.userId, data.oldPwd).flatMap {
                                         userService.get(auth.userId).flatMap {
-                                            val status = it.status ?: "03"
+                                            val status = it.status
                                             val nextStatus = userConfig.statusNext[status] ?: status
                                             userService.initPwd(auth.userId, data.newPwd, nextStatus).then(ServerResponse.ok().build())
                                         }
