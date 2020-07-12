@@ -26,7 +26,7 @@ class UserHandlerFilter(
             return if (userId != null)
                 userSvc.get(userId).flatMap {
                     val statusPaths = config.statusPaths[it.status]
-                    if (statusPaths == null || statusPaths.isEmpty() || statusPaths.stream().allMatch { path: String? ->
+                    if (statusPaths == null || statusPaths.isEmpty() || statusPaths.stream().anyMatch { path: String? ->
                                 PathPatternParser().parse(path!!).matches(PathContainer.parsePath(uri))
                             }
                     ) {
