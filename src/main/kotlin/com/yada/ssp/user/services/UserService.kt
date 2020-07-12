@@ -40,7 +40,7 @@ open class UserService @Autowired constructor(
     fun getPwd(id: String): Mono<String> = userRepo.findPwdById(id)
 
     fun checkPwd(id: String, pwd: String): Mono<Boolean> = getPwd(id)
-            .map { pwd == it }
+            .map { pwdDigestService.getPwdDigest(id, pwd) == it }
             .filter { it }
             .defaultIfEmpty(false)
 
@@ -54,7 +54,7 @@ open class UserService @Autowired constructor(
     fun resetPwd(id: String): Mono<Void> = changePwd(id, pwdDigestService.getDefaultPwdDigest(id))
 
     @Transactional
-    fun initPwd(id: String, pwd: String, status: String): Mono<Void> = changePwd(id, pwd)
+    fun initPwd(id: String, pwd: String, status: String): Mono<Void> = changePwd(id, pwdDigestService.getPwdDigest(id, pwd))
             .then(Mono.just(true))
             .flatMap {
                 updateStatus(id, status)
