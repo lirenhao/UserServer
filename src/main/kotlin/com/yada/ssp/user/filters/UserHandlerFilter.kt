@@ -2,8 +2,6 @@ package com.yada.ssp.user.filters
 
 import com.yada.ssp.user.config.UserConfigProperties
 import com.yada.ssp.user.services.UserService
-import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpStatus
 import org.springframework.http.server.PathContainer
 import org.springframework.stereotype.Component
@@ -14,8 +12,6 @@ import org.springframework.web.util.pattern.PathPatternParser
 import reactor.core.publisher.Mono
 
 @Component
-@Configuration
-@EnableConfigurationProperties(UserConfigProperties::class)
 class UserHandlerFilter(
         private val config: UserConfigProperties,
         private val userSvc: UserService

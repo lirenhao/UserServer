@@ -1,5 +1,6 @@
 package com.yada.ssp.user.handlers
 
+import com.yada.ssp.user.config.UserConfigProperties
 import com.yada.ssp.user.filters.Auth
 import com.yada.ssp.user.security.IEmailCodeService
 import com.yada.ssp.user.security.IPwdStrengthService
@@ -19,7 +20,8 @@ class AuthHandler @Autowired constructor(
         private val userService: UserService,
         private val recaptchaService: IRecaptchaService,
         private val pwdStrengthService: IPwdStrengthService,
-        private val emailCodeService: IEmailCodeService
+        private val emailCodeService: IEmailCodeService,
+        private val userConfig: UserConfigProperties
 ) {
 
     /**
@@ -73,10 +75,14 @@ class AuthHandler @Autowired constructor(
                         .filter { it }
                         .flatMap {
                             if (data.newPwd != null) {
-                                if (!pwdStrengthService.checkStrength(data.newPwd))
-                                    Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "密码强度不足"))
+                                if (pwdStrengthService.checkStrength(data.newPwd))
+                                    userService.get(auth.userId).flatMap {
+                                        val status = it.status ?: "01"
+                                        val nextStatus = userConfig.statusNext[status] ?: status
+                                        userService.initPwd(auth.userId, data.newPwd, nextStatus).then(ServerResponse.ok().build())
+                                    }
                                 else
-                                    userService.initPwd(auth.userId, data.newPwd, "02").then(ServerResponse.ok().build())
+                                    Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "密码强度不足"))
                             } else
                                 Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "密码不能为空"))
                         }
@@ -87,8 +93,12 @@ class AuthHandler @Autowired constructor(
      * 用户同意协议 02->00
      */
     fun policy(req: ServerRequest): Mono<ServerResponse> = getAuth(req)
-            .flatMap {
-                userService.updateStatus(it.userId!!, "00").then(ServerResponse.ok().build())
+            .flatMap { auth ->
+                userService.get(auth.userId!!).flatMap {
+                    val status = it.status ?: "02"
+                    val nextStatus = userConfig.statusNext[status] ?: status
+                    userService.updateStatus(auth.userId, nextStatus).then(ServerResponse.ok().build())
+                }
             }
 
     /**
@@ -98,18 +108,18 @@ class AuthHandler @Autowired constructor(
             .flatMap { data ->
                 recaptchaService.check(data.captcha!!)
                         .flatMap {
-                            if (data.oldPwd != null && data.newPwd != null) {
-                                if (!pwdStrengthService.checkStrength(data.newPwd)) {
+                            val auth = req.attribute("auth").get() as Auth
+                            if (auth.userId != null && data.oldPwd != null && data.newPwd != null) {
+                                if (pwdStrengthService.checkStrength(data.newPwd)) {
+                                    userService.checkPwd(auth.userId, data.oldPwd).flatMap {
+                                        userService.get(auth.userId).flatMap {
+                                            val status = it.status ?: "03"
+                                            val nextStatus = userConfig.statusNext[status] ?: status
+                                            userService.initPwd(auth.userId, data.newPwd, nextStatus).then(ServerResponse.ok().build())
+                                        }
+                                    }.switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "原密码错误")))
+                                } else
                                     Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "密码强度不足"))
-                                } else {
-                                    val auth = req.attribute("auth").get() as Auth
-                                    userService.changePwd(auth.userId!!, data.oldPwd, data.newPwd).flatMap { flag ->
-                                        if (flag) {
-                                            userService.updateStatus(auth.userId, "00").then(ServerResponse.ok().build())
-                                        } else
-                                            Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "修改密码时出错"))
-                                    }
-                                }
                             } else
                                 Mono.error(ResponseStatusException(HttpStatus.CONFLICT, "密码不能为空"))
                         }
