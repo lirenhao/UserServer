@@ -4,6 +4,8 @@ import com.yada.ssp.user.model.User
 import com.yada.ssp.user.repository.UserRepository
 import com.yada.ssp.user.security.IPwdDigestService
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
@@ -17,6 +19,15 @@ open class UserService @Autowired constructor(
     fun get(id: String): Mono<User> = userRepo.findById(id)
 
     fun getByOrgId(orgId: String): Flux<User> = userRepo.findByOrgIdOrderByIdAsc(orgId)
+
+    fun getPage(orgId: String, userId: String, pageable: Pageable): Mono<PageImpl<User>> =
+            userRepo.countByOrgIdAndIdLike(orgId, userId, pageable.sort)
+                    .flatMap { count ->
+                        userRepo.findByOrgIdAndIdLike(orgId, userId, pageable.sort)
+                                .buffer(pageable.pageSize, (pageable.pageNumber + 1))
+                                .elementAt(pageable.pageNumber, listOf())
+                                .map { PageImpl<User>(it, pageable, count) }
+                    }
 
     @Transactional
     fun createOrUpdate(user: User): Mono<User> =

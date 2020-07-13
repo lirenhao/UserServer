@@ -3,10 +3,12 @@ package com.yada.ssp.user.repository
 import com.yada.ssp.user.model.*
 import org.bson.Document
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.data.repository.reactive.ReactiveCrudRepository
+import org.springframework.data.repository.reactive.ReactiveSortingRepository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import org.springframework.data.mongodb.core.query.Query as MonoQuery
@@ -46,9 +48,13 @@ interface OrgRepository : ReactiveCrudRepository<Org, String> {
     fun findByIdStartingWithOrderByIdAsc(regex: String): Flux<Org>
 }
 
-interface UserRepository : ReactiveCrudRepository<User, String>, IUserRepository {
+interface UserRepository : ReactiveCrudRepository<User, String>, ReactiveSortingRepository<User, String>, IUserRepository {
 
     fun findByOrgIdOrderByIdAsc(orgId: String): Flux<User>
+
+    fun findByOrgIdAndIdLike(orgId: String, id: String, sort: Sort): Flux<User>
+
+    fun countByOrgIdAndIdLike(orgId: String, id: String, sort: Sort): Mono<Long>
 
     fun deleteByOrgId(orgId: String): Mono<Void>
 }

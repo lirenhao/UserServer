@@ -23,8 +23,8 @@ open class SysRouterConfig @Autowired constructor(
                 DELETE("/{id}", orgHandler::delete)
             }
             "/user".nest {
-                GET("", userHandler::getUsersBy)
-                GET("/{id}", userHandler::get)
+                GET("", userHandler::getPage)
+                GET("/{id}", userHandler::getOne)
                 GET("/{id}/exist", userHandler::exist)
                 PUT("/{id}/reset_pwd", userHandler::resetPwd)
                 PUT("", userHandler::createOrUpdate)
