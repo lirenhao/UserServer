@@ -8,12 +8,12 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.function.server.router
 
 @Configuration
-open class SysRouterConfig @Autowired constructor(
+class SysRouterConfig @Autowired constructor(
         private val orgHandler: OrgHandler,
         private val userHandler: UserHandler
 ) {
     @Bean
-    open fun sysApiRouter() = router {
+    fun sysApiRouter() = router {
         "/sys".nest {
             "/org".nest {
                 GET("", orgHandler::getTree)
@@ -24,10 +24,11 @@ open class SysRouterConfig @Autowired constructor(
             }
             "/user".nest {
                 GET("", userHandler::getPage)
+                POST("", userHandler::create)
                 GET("/{id}", userHandler::getOne)
                 GET("/{id}/exist", userHandler::exist)
                 PUT("/{id}/reset_pwd", userHandler::resetPwd)
-                PUT("", userHandler::createOrUpdate)
+                PUT("/{id}", userHandler::update)
                 DELETE("/{id}", userHandler::delete)
             }
         }

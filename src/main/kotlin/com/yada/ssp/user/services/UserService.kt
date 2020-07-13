@@ -30,16 +30,18 @@ open class UserService @Autowired constructor(
                     }
 
     @Transactional
-    fun createOrUpdate(user: User): Mono<User> =
-            userRepo
-                    .findById(user.id)
-                    .flatMap { userRepo.save(user) }
-                    .switchIfEmpty(
-                            userRepo.save(user)
-                                    .flatMap {
-                                        resetPwd(it.id).then(Mono.just(it))
-                                    }
-                    )
+    fun create(user: User): Mono<User> = userRepo.save(user)
+            .flatMap {
+                resetPwd(it.id).then(Mono.just(it))
+            }
+
+    @Transactional
+    fun update(user: User): Mono<User> = getPwd(user.id)
+            .flatMap { pwd ->
+                userRepo.save(user).flatMap {
+                    changePwd(it.id, pwd).then(Mono.just(it))
+                }
+            }
 
     @Transactional
     fun delete(id: String): Mono<Void> = userRepo.deleteById(id)
