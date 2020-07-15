@@ -63,7 +63,7 @@ class UserHandler @Autowired constructor(private val userService: UserService) {
             userService.delete(req.pathVariable("id")).then(ok().build())
 
     @Transactional
-    fun resetPwd(req: ServerRequest): Mono<ServerResponse> =
+    fun reset(req: ServerRequest): Mono<ServerResponse> =
             userService.get(req.pathVariable("id"))
                     .flatMap {
                         userService.updateStatus(it.id, "01").then(Mono.just(true))

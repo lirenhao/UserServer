@@ -28,7 +28,7 @@ class SysRouterConfig @Autowired constructor(
                 PUT("/policy", userHandler::updatePolicy)
                 GET("/{id}", userHandler::getOne)
                 GET("/{id}/exist", userHandler::exist)
-                PUT("/{id}/reset_pwd", userHandler::resetPwd)
+                PUT("/{id}/reset", userHandler::reset)
                 PUT("/{id}", userHandler::update)
                 DELETE("/{id}", userHandler::delete)
             }
