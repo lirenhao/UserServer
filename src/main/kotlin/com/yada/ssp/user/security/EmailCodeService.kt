@@ -81,8 +81,8 @@ class EmailCodeService @Autowired constructor(
     private fun isAble(dataTime: String?, expire: Int): Boolean =
             try {
                 val curTime = System.currentTimeMillis()
-                val expTime: Long = sdf.parse(dataTime).time + expire
-                curTime > expTime
+                val hisTime: Long = sdf.parse(dataTime).time + (expire * 1000)
+                curTime < hisTime
             } catch (e: ParseException) {
                 false
             }
