@@ -58,6 +58,10 @@ open class UserService @Autowired constructor(
             .defaultIfEmpty(false)
 
     @Transactional
+    fun updatePolicy(): Mono<Void> = userRepo.batchStatus("00", "02")
+            .then(userRepo.batchStatus("03", "01"))
+
+    @Transactional
     fun updateStatus(id: String, status: String): Mono<Void> = userRepo.updateStatus(id, status)
 
     @Transactional

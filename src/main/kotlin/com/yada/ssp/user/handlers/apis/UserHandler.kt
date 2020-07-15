@@ -7,10 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.ServerResponse.ok
-import org.springframework.web.reactive.function.server.body
 import org.springframework.web.reactive.function.server.bodyToMono
 import org.springframework.web.server.ResponseStatusException
 import reactor.core.publisher.Mono
@@ -62,15 +62,16 @@ class UserHandler @Autowired constructor(private val userService: UserService) {
     fun delete(req: ServerRequest): Mono<ServerResponse> =
             userService.delete(req.pathVariable("id")).then(ok().build())
 
+    @Transactional
     fun resetPwd(req: ServerRequest): Mono<ServerResponse> =
             userService.get(req.pathVariable("id"))
                     .flatMap {
-                        when (it.status) {
-                            "00" -> userService.updateStatus(it.id, "03").then(Mono.just(true))
-                            "02" -> userService.updateStatus(it.id, "04").then(Mono.just(true))
-                            else -> Mono.just(true)
-                        }
+                        userService.updateStatus(it.id, "01").then(Mono.just(true))
                     }.flatMap {
-                        ok().body(userService.resetPwd(req.pathVariable("id")))
+                        userService.resetPwd(req.pathVariable("id")).then(ok().build())
                     }.switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.BAD_REQUEST, "重置密码失败")))
+
+    fun updatePolicy(req: ServerRequest): Mono<ServerResponse> =
+            userService.updatePolicy().then(ok().build())
+
 }

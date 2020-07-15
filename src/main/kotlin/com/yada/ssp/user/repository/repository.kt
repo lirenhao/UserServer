@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono
 import org.springframework.data.mongodb.core.query.Query as MonoQuery
 
 interface IUserRepository {
+    fun batchStatus(preStatus: String, status: String): Mono<Void>
     fun updateStatus(id: String, status: String): Mono<Void>
     fun changePwd(id: String, pwd: String): Mono<Void>
     fun findPwdById(id: String): Mono<String>
@@ -22,6 +23,12 @@ interface IUserRepository {
 class UserRepositoryImpl @Autowired constructor(
         private val reactiveMongoTemplate: ReactiveMongoTemplate
 ) : IUserRepository {
+
+    override fun batchStatus(preStatus: String, status: String): Mono<Void> {
+        val query = MonoQuery(Criteria.where("status").`is`(preStatus))
+        val update = Update().set("status", status)
+        return reactiveMongoTemplate.updateMulti(query, update, User::class.java).then(Mono.empty())
+    }
 
     override fun updateStatus(id: String, status: String): Mono<Void> {
         val query = MonoQuery(Criteria.where("id").`is`(id))

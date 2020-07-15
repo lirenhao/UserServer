@@ -25,6 +25,7 @@ class SysRouterConfig @Autowired constructor(
             "/user".nest {
                 GET("", userHandler::getPage)
                 POST("", userHandler::create)
+                PUT("/policy", userHandler::updatePolicy)
                 GET("/{id}", userHandler::getOne)
                 GET("/{id}/exist", userHandler::exist)
                 PUT("/{id}/reset_pwd", userHandler::resetPwd)
