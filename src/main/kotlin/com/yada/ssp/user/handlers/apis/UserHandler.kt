@@ -51,7 +51,7 @@ class UserHandler @Autowired constructor(private val userService: UserService) {
                                             data.orgId ?: user.orgId,
                                             data.roles ?: user.roles,
                                             data.status ?: user.status,
-                                            data.emailAddress ?: user.emailAddress
+                                            data.emailAddress ?: user.email
                                     )
                                 }
                                 .flatMap { userService.update(it) }

@@ -39,7 +39,7 @@ class AuthHandler @Autowired constructor(
             .flatMap { auth ->
                 userService.get(auth.userId!!)
                         .map {
-                            UserInfoData(it.id, it.status, it.emailAddress)
+                            UserInfoData(it.id, it.status, it.email)
                         }
                         .flatMap {
                             ServerResponse.ok().bodyValue(it)
@@ -54,7 +54,7 @@ class AuthHandler @Autowired constructor(
             .flatMap { auth ->
                 userService.get(auth.userId!!)
                         .flatMap {
-                            emailCodeService.send(auth.userId, it.emailAddress)
+                            emailCodeService.send(auth.userId, it.email)
                                     .flatMap { flag ->
                                         ServerResponse.ok().bodyValue(flag)
                                     }

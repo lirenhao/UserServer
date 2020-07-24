@@ -14,7 +14,7 @@ data class User(
         val orgId: String,
         val roles: Set<String>,
         val status: String,
-        val emailAddress: String
+        val email: String
 )
 
 @Document
